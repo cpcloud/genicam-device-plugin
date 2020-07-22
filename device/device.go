@@ -20,19 +20,19 @@ const (
 	// pluginName is the deviceName of the plugin
 	// this is used for logging and (along with the version) for uniquely identifying
 	// plugin binaries fingerprinted by the client
-	pluginName = "skeleton-device"
+	pluginName = "genicam-device"
 
 	// plugin version allows the client to identify and use newer versions of
 	// an installed plugin
-	pluginVersion = "v0.1.0"
+	pluginVersion = "v0.0.1"
 
 	// vendor is the label for the vendor providing the devices.
 	// along with "type" and "model", this can be used when requesting devices:
 	//   https://www.nomadproject.io/docs/job-specification/device.html#name
-	vendor = "hashicorp"
+	vendor = "blogle"
 
 	// deviceType is the "type" of device being returned
-	deviceType = "skeleton"
+	deviceType = "genicam"
 )
 
 var (
