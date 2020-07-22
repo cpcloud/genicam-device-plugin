@@ -1,4 +1,4 @@
-module github.com/hashicorp/nomad-skeleton-device-plugin
+module github.com/blogle/genicam-device-plugin
 
 go 1.12
 
