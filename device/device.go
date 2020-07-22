@@ -72,9 +72,9 @@ type Config struct {
 	FingerprintPeriod string `codec:"fingerprint_period"`
 }
 
-// SkeletonDevicePlugin contains a skeleton for most of the implementation of a
+// GenicamDevicePlugin contains a skeleton for most of the implementation of a
 // device plugin.
-type SkeletonDevicePlugin struct {
+type GenicamDevicePlugin struct {
 	logger log.Logger
 
 	// these are local copies of the config values that we need for operation
@@ -98,8 +98,8 @@ type SkeletonDevicePlugin struct {
 //
 // Plugin configuration isn't available yet, so there will typically be
 // a limit to the initialization that can be performed at this point.
-func NewPlugin(log log.Logger) *SkeletonDevicePlugin {
-	return &SkeletonDevicePlugin{
+func NewPlugin(log log.Logger) *GenicamDevicePlugin {
+	return &GenicamDevicePlugin{
 		logger:  log.Named(pluginName),
 		devices: make(map[string]string),
 	}
@@ -109,7 +109,7 @@ func NewPlugin(log log.Logger) *SkeletonDevicePlugin {
 //
 // This is called during Nomad client startup, while discovering and loading
 // plugins.
-func (d *SkeletonDevicePlugin) PluginInfo() (*base.PluginInfoResponse, error) {
+func (d *GenicamDevicePlugin) PluginInfo() (*base.PluginInfoResponse, error) {
 	return pluginInfo, nil
 }
 
@@ -117,12 +117,12 @@ func (d *SkeletonDevicePlugin) PluginInfo() (*base.PluginInfoResponse, error) {
 //
 // This is called during Nomad client startup, immediately before parsing
 // plugin config and calling SetConfig
-func (d *SkeletonDevicePlugin) ConfigSchema() (*hclspec.Spec, error) {
+func (d *GenicamDevicePlugin) ConfigSchema() (*hclspec.Spec, error) {
 	return configSpec, nil
 }
 
 // SetConfig is called by the client to pass the configuration for the plugin.
-func (d *SkeletonDevicePlugin) SetConfig(c *base.Config) error {
+func (d *GenicamDevicePlugin) SetConfig(c *base.Config) error {
 
 	// decode the plugin config
 	var config Config
@@ -156,7 +156,7 @@ func (d *SkeletonDevicePlugin) SetConfig(c *base.Config) error {
 // Fingerprint streams detected devices.
 // Messages should be emitted to the returned channel when there are changes
 // to the devices or their health.
-func (d *SkeletonDevicePlugin) Fingerprint(ctx context.Context) (<-chan *device.FingerprintResponse, error) {
+func (d *GenicamDevicePlugin) Fingerprint(ctx context.Context) (<-chan *device.FingerprintResponse, error) {
 	// Fingerprint returns a channel. The recommended way of organizing a plugin
 	// is to pass that into a long-running goroutine and return the channel immediately.
 	outCh := make(chan *device.FingerprintResponse)
@@ -166,7 +166,7 @@ func (d *SkeletonDevicePlugin) Fingerprint(ctx context.Context) (<-chan *device.
 
 // Stats streams statistics for the detected devices.
 // Messages should be emitted to the returned channel on the specified interval.
-func (d *SkeletonDevicePlugin) Stats(ctx context.Context, interval time.Duration) (<-chan *device.StatsResponse, error) {
+func (d *GenicamDevicePlugin) Stats(ctx context.Context, interval time.Duration) (<-chan *device.StatsResponse, error) {
 	// Similar to Fingerprint, Stats returns a channel. The recommended way of
 	// organizing a plugin is to pass that into a long-running goroutine and
 	// return the channel immediately.
@@ -186,7 +186,7 @@ func (e *reservationError) Error() string {
 // Reserve returns information to the task driver on on how to mount the given devices.
 // It may also perform any device-specific orchestration necessary to prepare the device
 // for use. This is called in a pre-start hook on the client, before starting the workload.
-func (d *SkeletonDevicePlugin) Reserve(deviceIDs []string) (*device.ContainerReservation, error) {
+func (d *GenicamDevicePlugin) Reserve(deviceIDs []string) (*device.ContainerReservation, error) {
 	if len(deviceIDs) == 0 {
 		return &device.ContainerReservation{}, nil
 	}

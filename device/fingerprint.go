@@ -11,7 +11,7 @@ import (
 )
 
 // doFingerprint is the long-running goroutine that detects device changes
-func (d *SkeletonDevicePlugin) doFingerprint(ctx context.Context, devices chan *device.FingerprintResponse) {
+func (d *GenicamDevicePlugin) doFingerprint(ctx context.Context, devices chan *device.FingerprintResponse) {
 	defer close(devices)
 
 	// Create a timer that will fire immediately for the first detection
@@ -40,7 +40,7 @@ type fingerprintedDevice struct {
 
 // writeFingerprintToChannel collects fingerprint info, partitions devices into
 // device groups, and sends the data over the provided channel.
-func (d *SkeletonDevicePlugin) writeFingerprintToChannel(devices chan<- *device.FingerprintResponse) {
+func (d *GenicamDevicePlugin) writeFingerprintToChannel(devices chan<- *device.FingerprintResponse) {
 	// The logic for fingerprinting devices and detecting the diffs
 	// will vary across devices.
 	//
