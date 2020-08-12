@@ -116,17 +116,6 @@ func (d *GenicamDevicePlugin) SetConfig(c *base.Config) error {
 		return err
 	}
 
-	// save the configuration to the plugin
-	// typically, we'll perform any additional validation or conversion
-	// from MsgPack base types
-	if config.SomeString == "" {
-		return fmt.Errorf("some_optional_string_with_default was not acceptible, cannot be empty",
-			"value", config.SomeString)
-	}
-	d.someString = config.SomeString
-	d.someBool = config.SomeBool
-	d.someIntArray = config.SomeIntArray
-
 	// for example, convert the poll period from an HCL string into a time.Duration
 	period, err := time.ParseDuration(config.FingerprintPeriod)
 	if err != nil {
@@ -201,12 +190,13 @@ func (d *GenicamDevicePlugin) Reserve(deviceIDs []string) (*device.ContainerRese
 
 	for i, serial_nbr := range deviceIDs {
 		// Check if the device is known
-		if _, address := d.devices[serial_nbr]; !address {
+        address, found := d.devices[serial_nbr]
+		if found {
 			return nil, status.Newf(codes.InvalidArgument, "unknown device %q", serial_nbr).Err()
 		}
 
 		// Envs are a set of environment variables to set for the task.
-		resp.Envs[fmt.Sprintf("DEVICE_%d_SERIAL_NBR", i)] = id
+		resp.Envs[fmt.Sprintf("DEVICE_%d_SERIAL_NBR", i)] = serial_nbr
 		resp.Envs[fmt.Sprintf("DEVICE_%d_ADDRESS", i)] = address
 	}
 

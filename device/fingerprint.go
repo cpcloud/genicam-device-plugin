@@ -64,15 +64,22 @@ func (d *GenicamDevicePlugin) writeFingerprintToChannel(devices chan<- *device.F
         var discoveredDevices []*fingerprintedDevice
 
 		//// "discover" some devices
-        for i := uint(0); i < n; i++ {
-            append(discoveredDevices, &fingerprintedDevice {
-                device_id: aravis.GetDeviceId(i),
-                physical_id: aravis.GetDevicePhysicalId(i),
-                model: aravis.GetDeviceModel(i),
-                serial_nbr: aravis.GetDeviceSerialNbr(i),
-                vendor: aravis.GetDeviceVendor(i),
-                address: aravis.GetDeviceAddress(i),
-                protocol: aravis.GetDeviceProtocol(i),
+        for i := uint(0); i < ndevices; i++ {
+            device_id, _ := aravis.GetDeviceId(i)
+            physical_id, _ := aravis.GetDevicePhysicalId(i)
+            model, _ := aravis.GetDeviceModel(i)
+            serial_nbr, _ := aravis.GetDeviceSerialNbr(i)
+            vendor, _ := aravis.GetDeviceVendor(i)
+            address, _ := aravis.GetDeviceAddress(i)
+            protocol, _ := aravis.GetDeviceProtocol(i)
+            discoveredDevices = append(discoveredDevices, &fingerprintedDevice {
+                device_id: device_id,
+                physical_id: physical_id,
+                model: model,
+                serial_nbr: serial_nbr,
+                vendor: vendor,
+                address: address,
+                protocol: protocol,
             })
         }
 

@@ -1,10 +1,11 @@
-module github.com/blogle/genicam-device-plugin
+module github.com/cpcloud/genicam-device-plugin
 
 go 1.12
 
 require (
 	github.com/LK4D4/joincontext v0.0.0-20171026170139-1724345da6d5 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/cpcloud/go-aravis v0.0.0-20200812163554-fda1f144cbff
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75 // indirect
 	github.com/hashicorp/consul/api v1.2.0 // indirect
