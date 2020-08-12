@@ -29,7 +29,7 @@ const (
 	// vendor is the label for the vendor providing the devices.
 	// along with "type" and "model", this can be used when requesting devices:
 	//   https://www.nomadproject.io/docs/job-specification/device.html#name
-	vendor = "blogle"
+	vendor = "tis"
 
 	// deviceType is the "type" of device being returned
 	deviceType = "genicam"
@@ -51,12 +51,6 @@ var (
 	// options are here:
 	//   https://github.com/hashicorp/nomad/blob/v0.10.0/plugins/shared/hclspec/hcl_spec.proto
 	configSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-		"some_optional_string_with_default": hclspec.NewDefault(
-			hclspec.NewAttr("some_optional_string_with_default", "string", false),
-			hclspec.NewLiteral("\"note the escaped quotes here\""),
-		),
-		"some_required_boolean": hclspec.NewAttr("some_required_boolean", "bool", true),
-		"some_optional_list":    hclspec.NewAttr("some_optional_list", "list(number)", false),
 		"fingerprint_period": hclspec.NewDefault(
 			hclspec.NewAttr("fingerprint_period", "string", false),
 			hclspec.NewLiteral("\"1m\""),
@@ -66,9 +60,6 @@ var (
 
 // Config contains configuration information for the plugin.
 type Config struct {
-	SomeString        string `codec:"some_optional_string_with_default"`
-	SomeBool          bool   `codec:"some_required_boolean"`
-	SomeIntArray      []int  `codec:"some_optional_list"`
 	FingerprintPeriod string `codec:"fingerprint_period"`
 }
 
@@ -77,11 +68,6 @@ type Config struct {
 type GenicamDevicePlugin struct {
 	logger log.Logger
 
-	// these are local copies of the config values that we need for operation
-	someString   string
-	someBool     bool
-	someIntArray []int
-
 	// fingerprintPeriod the period for the fingerprinting loop
 	// most plugins that fingerprint in a polling loop will have this
 	fingerprintPeriod time.Duration
@@ -89,7 +75,7 @@ type GenicamDevicePlugin struct {
 	// devices is a list of fingerprinted devices
 	// most plugins will maintain, at least, a list of the devices that were
 	// discovered during fingerprinting.
-	// we'll save the "device name"/"model"
+	// we'll save the "device serial"/"ip address"
 	devices    map[string]string
 	deviceLock sync.RWMutex
 }
@@ -213,32 +199,15 @@ func (d *GenicamDevicePlugin) Reserve(deviceIDs []string) (*device.ContainerRese
 		Devices: []*device.DeviceSpec{},
 	}
 
-	// Mounts are used to mount host volumes into a container that may include
-	// libraries, etc.
-	resp.Mounts = append(resp.Mounts, &device.Mount{
-		TaskPath: "/usr/lib/libsome-library.so",
-		HostPath: "/usr/lib/libprobably-some-fingerprinted-or-configured-library.so",
-		ReadOnly: true,
-	})
-
-	for i, id := range deviceIDs {
+	for i, serial_nbr := range deviceIDs {
 		// Check if the device is known
-		if _, ok := d.devices[id]; !ok {
-			return nil, status.Newf(codes.InvalidArgument, "unknown device %q", id).Err()
+		if _, address := d.devices[serial_nbr]; !address {
+			return nil, status.Newf(codes.InvalidArgument, "unknown device %q", serial_nbr).Err()
 		}
 
 		// Envs are a set of environment variables to set for the task.
-		resp.Envs[fmt.Sprintf("DEVICE_%d", i)] = id
-
-		// Devices are the set of devices to mount into the container.
-		resp.Devices = append(resp.Devices, &device.DeviceSpec{
-			// TaskPath is the location to mount the device in the task's file system.
-			TaskPath: fmt.Sprintf("/dev/skel%d", i),
-			// HostPath is the host location of the device.
-			HostPath: fmt.Sprintf("/dev/devActual"),
-			// CgroupPerms defines the permissions to use when mounting the device.
-			CgroupPerms: "rx",
-		})
+		resp.Envs[fmt.Sprintf("DEVICE_%d_SERIAL_NBR", i)] = id
+		resp.Envs[fmt.Sprintf("DEVICE_%d_ADDRESS", i)] = address
 	}
 
 	return resp, nil

@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	//"github.com/hashicorp/nomad/helper"
-    //"github.com/hashicorp/nomad/helper/uuid"
 	"github.com/hashicorp/nomad/plugins/device"
 	"github.com/hashicorp/nomad/plugins/shared/structs"
+
+    aravis "github.com/cpcloud/go-aravis"
 )
 
 // doFingerprint is the long-running goroutine that detects device changes
@@ -33,11 +33,13 @@ func (d *GenicamDevicePlugin) doFingerprint(ctx context.Context, devices chan *d
 //
 // plugin implementations will likely have a native struct provided by the corresonding SDK
 type fingerprintedDevice struct {
-    cam_num      int64
+    device_id    string
+    physical_id  string
     model        string
-    manufacturer string
-    serial       string
-    iface        string
+    serial_nbr   string
+    vendor       string
+    address      string
+    protocol     string
 }
 
 // writeFingerprintToChannel collects fingerprint info, partitions devices into
@@ -57,37 +59,40 @@ func (d *GenicamDevicePlugin) writeFingerprintToChannel(devices chan<- *device.F
 		d.deviceLock.Lock()
 		defer d.deviceLock.Unlock()
 
+        aravis.UpdateDeviceList()
+        ndevices, _ := aravis.GetNumDevices()
+        var discoveredDevices []*fingerprintedDevice
+
 		//// "discover" some devices
-		discoveredDevices := []*fingerprintedDevice{
-			{
-				cam_num:       0,
-				model:        "DFK 33GX264E",
-				manufacturer: "TIS",
-                serial:       "01810549",
-                iface:        "Gige",
-			},
-		}
+        for i := uint(0); i < n; i++ {
+            append(discoveredDevices, &fingerprintedDevice {
+                device_id: aravis.GetDeviceId(i),
+                physical_id: aravis.GetDevicePhysicalId(i),
+                model: aravis.GetDeviceModel(i),
+                serial_nbr: aravis.GetDeviceSerialNbr(i),
+                vendor: aravis.GetDeviceVendor(i),
+                address: aravis.GetDeviceAddress(i),
+                protocol: aravis.GetDeviceProtocol(i),
+            })
+        }
 
 		//// during fingerprinting, devices are grouped by "device group" in
 		//// order to facilitate scheduling
 		//// devices in the same device group should have the same
 		//// Vendor, Type, and Name ("Model")
 		//// Build Fingerprint response with computed groups and send it over the channel
-		//deviceListByDeviceName := make(map[string][]*fingerprintedDevice)
-		//for _, device := range discoveredDevices {
-        //    camNum = device.cam_num;
-		//	deviceName := device.deviceName
-		//	deviceListByDeviceName[cam_num] = append(deviceListByDeviceName[deviceName], device)
-		//	d.devices[cam_num] = deviceName
-		//}
+        deviceListByDeviceName := make(map[string][]*fingerprintedDevice)
+        for _, device := range discoveredDevices {
+            serial_nbr := device.serial_nbr
+            deviceListByDeviceName[device.model] = append(deviceListByDeviceName[device.model], device)
+            d.devices[serial_nbr] = device.address
+        }
 
 		//// Build Fingerprint response with computed groups and send it over the channel
-		//deviceGroups := make([]*device.DeviceGroup, 0, len(deviceListByDeviceName))
-		//for groupName, devices := range deviceListByDeviceName {
-		//	deviceGroups = append(deviceGroups, deviceGroupFromFingerprintData(groupName, devices))
-		//}
-        deviceGroups := make([]*device.DeviceGroup, 0, 1)
-        deviceGroups = append(deviceGroups, deviceGroupFromFingerprintData("taco", discoveredDevices))
+        deviceGroups := make([]*device.DeviceGroup, 0, len(deviceListByDeviceName))
+        for groupName, devices := range deviceListByDeviceName {
+            deviceGroups = append(deviceGroups, deviceGroupFromFingerprintData(groupName, devices))
+        }
 
 		devices <- device.NewFingerprint(deviceGroups...)
 	}
@@ -103,17 +108,18 @@ func deviceGroupFromFingerprintData(groupName string, deviceList []*fingerprinte
 	devices := make([]*device.Device, 0, len(deviceList))
 	for _, dev := range deviceList {
 		devices = append(devices, &device.Device{
-			ID:      dev.serial,
+			ID:      dev.serial_nbr,
 			Healthy: true,
-			HwLocality: &device.DeviceLocality{
-				PciBusID: "GigE",
-			},
+            HwLocality: nil,
+			// HwLocality: &device.DeviceLocality{
+			//     PciBusID: "GigE",
+			// },
 		})
 	}
 
-	deviceGroup := &device.DeviceGroup{
-		Vendor: "TIS",
-		Type:   "Camera",
+	return &device.DeviceGroup{
+		Vendor: "tis",
+		Type:   "camera",
         Name:   "DFK 33GX264E",
 		Devices: devices,
 		// The device API assumes that devices with the same DeviceName have the same
@@ -121,16 +127,5 @@ func deviceGroupFromFingerprintData(groupName string, deviceList []*fingerprinte
 		// If not, then they'll need to be split into different device groups
 		// with different names.
 		Attributes: map[string]*structs.Attribute{},
-        //{
-		//	"attrA": {
-		//		Int:  helper.Int64ToPtr(1024),
-		//		Unit: "MB",
-		//	},
-		//	"attrB": {
-		//		Float: helper.Float64ToPtr(10.5),
-		//		Unit:  "MW",
-		//	},
-		//},
 	}
-	return deviceGroup
 }
