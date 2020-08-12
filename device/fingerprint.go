@@ -125,9 +125,9 @@ func deviceGroupFromFingerprintData(groupName string, deviceList []*fingerprinte
 	}
 
 	return &device.DeviceGroup{
-		Vendor: "tis",
-		Type:   "camera",
-        Name:   "DFK 33GX264E",
+		Vendor: vendor,
+		Type:   deviceType,
+        Name:   groupName,
 		Devices: devices,
 		// The device API assumes that devices with the same DeviceName have the same
 		// attributes like amount of memory, power, bar1memory, etc.
